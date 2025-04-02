@@ -48,7 +48,7 @@
 <body>
 
     <h1>⚡ Carga em Movimento - O Jogo ⚡</h1>
-    <p>Jogue o dado e mova sua carga até o final do tabuleiro!</p>
+    <p>Jogue o dado e responda à pergunta para avançar para o próximo nível!</p>
     
     <div id="tabuleiro"></div>
     
@@ -73,8 +73,8 @@
         let somDado = document.getElementById("somDado");
         let somErro = document.getElementById("somErro");
 
-        let jogador1 = { posicao: 0, simbolo: "🔴" };  
-        let jogador2 = { posicao: 0, simbolo: "🔵" };  
+        let jogador1 = { posicao: 0, simbolo: "🔴", nome: "Jogador 1" };  
+        let jogador2 = { posicao: 0, simbolo: "🔵", nome: "Jogador 2" };  
         let jogadorAtual = jogador1;
         let casasEvento = [5, 12, 18, 24, 30];  
 
@@ -111,39 +111,40 @@
             let dado = Math.floor(Math.random() * 6) + 1;
             mensagem.innerHTML = `🎲 Você rolou: ${dado}`;
             
-            jogadorAtual.posicao += dado;
-            if (jogadorAtual.posicao >= tamanho * tamanho - 1) {
-                mensagem.innerHTML += ` 🎉 ${jogadorAtual.simbolo} VENCEU!`;
-                criarTabuleiro();
-                return;
-            }
-
-            if (casasEvento.includes(jogadorAtual.posicao)) {
-                sortearPergunta();
-                return;
-            }
-
-            jogadorAtual = jogadorAtual === jogador1 ? jogador2 : jogador1;
-            criarTabuleiro();
+            // Antes de mover, o jogador deve responder a pergunta
+            sortearPergunta(dado);
         }
 
-        function sortearPergunta() {
+        function sortearPergunta(dado) {
             perguntaAtual = perguntas[Math.floor(Math.random() * perguntas.length)];
             questaoTexto.innerHTML = perguntaAtual.texto;
             perguntaBox.style.display = "block";
+            // Guardamos o valor do dado para usar depois na resposta
+            perguntaBox.setAttribute("data-dado", dado);
         }
 
         function responder(resposta) {
+            let dado = parseInt(perguntaBox.getAttribute("data-dado"));
+
             if (resposta === perguntaAtual.resposta) {
-                mensagem.innerHTML += " ✅ Resposta certa! Você pode avançar.";
+                // Se acertar, avançar para o próximo nível
+                jogadorAtual.posicao += dado;
+                mensagem.innerHTML += " ✅ Resposta certa! Você avançou.";
             } else {
-                mensagem.innerHTML += " ❌ Resposta errada! Volte 2 casas.";
+                // Se errar, permanece na mesma posição
+                mensagem.innerHTML += " ❌ Resposta errada! Você permanece na mesma posição.";
                 somErro.play();
-                jogadorAtual.posicao = Math.max(0, jogadorAtual.posicao - 2);
             }
 
             perguntaBox.style.display = "none";
+            // Alterna o jogador
             jogadorAtual = jogadorAtual === jogador1 ? jogador2 : jogador1;
+
+            // Verifica se algum jogador venceu
+            if (jogadorAtual.posicao >= tamanho * tamanho - 1) {
+                mensagem.innerHTML += ` 🎉 ${jogadorAtual.simbolo} VENCEU!`;
+            }
+
             criarTabuleiro();
         }
 
