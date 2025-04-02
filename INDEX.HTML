@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Carga em Movimento - Jogo</title>
+    <style>
+        body { text-align: center; font-family: Arial, sans-serif; background-color: #f4f4f4; }
+        h1 { color: #333; }
+        #tabuleiro {
+            display: grid; 
+            grid-template-columns: repeat(6, 60px);
+            grid-template-rows: repeat(6, 60px);
+            gap: 2px;
+            margin: 20px auto;
+            width: max-content;
+            background-color: #fff;
+            padding: 10px;
+            border-radius: 10px;
+            box-shadow: 2px 2px 10px #888;
+        }
+        .casa {
+            width: 60px; height: 60px; 
+            border: 1px solid black;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 20px;
+            background-color: white;
+            position: relative;
+        }
+        .evento { background-color: yellow; }
+        .jogador1 { color: red; font-weight: bold; animation: bounce 0.3s; }
+        .jogador2 { color: blue; font-weight: bold; animation: bounce 0.3s; }
+        @keyframes bounce {
+            0% { transform: translateY(-5px); }
+            50% { transform: translateY(5px); }
+            100% { transform: translateY(0); }
+        }
+        button {
+            background-color: #28a745; color: white; border: none;
+            padding: 10px 20px; font-size: 16px; cursor: pointer;
+            margin: 10px; border-radius: 5px;
+        }
+        button:hover { background-color: #218838; }
+        #mensagem { font-size: 18px; font-weight: bold; margin-top: 10px; }
+        #pergunta { display: none; padding: 10px; background: #fff; border-radius: 5px; }
+    </style>
+</head>
+<body>
+
+    <h1>⚡ Carga em Movimento - O Jogo ⚡</h1>
+    <p>Jogue o dado e mova sua carga até o final do tabuleiro!</p>
+    
+    <div id="tabuleiro"></div>
+    
+    <button onclick="rolarDado()">🎲 Rolar Dado</button>
+    <p id="mensagem"></p>
+
+    <div id="pergunta">
+        <p id="questao"></p>
+        <button onclick="responder(true)">✅ Verdadeiro</button>
+        <button onclick="responder(false)">❌ Falso</button>
+    </div>
+
+    <audio id="somDado" src="https://www.soundjay.com/button/sounds/button-3.mp3"></audio>
+    <audio id="somErro" src="https://www.soundjay.com/button/sounds/beep-10.mp3"></audio>
+
+    <script>
+        const tamanho = 6;
+        let tabuleiro = document.getElementById("tabuleiro");
+        let mensagem = document.getElementById("mensagem");
+        let perguntaBox = document.getElementById("pergunta");
+        let questaoTexto = document.getElementById("questao");
+        let somDado = document.getElementById("somDado");
+        let somErro = document.getElementById("somErro");
+
+        let jogador1 = { posicao: 0, simbolo: "🔴" };  
+        let jogador2 = { posicao: 0, simbolo: "🔵" };  
+        let jogadorAtual = jogador1;
+        let casasEvento = [5, 12, 18, 24, 30];  
+
+        let perguntas = [
+            { texto: "A força elétrica é diretamente proporcional à carga?", resposta: true },
+            { texto: "A carga de um próton é negativa?", resposta: false },
+            { texto: "Cargas opostas se repelem?", resposta: false },
+            { texto: "A Lei de Coulomb descreve a interação entre cargas elétricas?", resposta: true },
+            { texto: "A unidade de carga elétrica no SI é o Coulomb?", resposta: true },
+            { texto: "A força elétrica entre duas cargas aumenta quando a distância entre elas aumenta?", resposta: false },
+            { texto: "Dois elétrons próximos exercem uma força de atração entre si?", resposta: false },
+            { texto: "A constante eletrostática k no vácuo é aproximadamente 9 × 10⁹ N·m²/C²?", resposta: true },
+            { texto: "Uma carga positiva sempre se move para uma região de menor potencial elétrico?", resposta: true },
+            { texto: "O campo elétrico ao redor de uma carga negativa aponta para fora?", resposta: false }
+        ];
+        let perguntaAtual = null;
+
+        function criarTabuleiro() {
+            tabuleiro.innerHTML = "";
+            for (let i = 0; i < tamanho * tamanho; i++) {
+                let casa = document.createElement("div");
+                casa.classList.add("casa");
+                if (i === jogador1.posicao) casa.innerHTML = jogador1.simbolo;
+                if (i === jogador2.posicao) casa.innerHTML = jogador2.simbolo;
+                if (casasEvento.includes(i)) casa.classList.add("evento");
+                tabuleiro.appendChild(casa);
+            }
+        }
+
+        function rolarDado() {
+            if (perguntaBox.style.display === "block") return;
+
+            somDado.play();
+            let dado = Math.floor(Math.random() * 6) + 1;
+            mensagem.innerHTML = `🎲 Você rolou: ${dado}`;
+            
+            jogadorAtual.posicao += dado;
+            if (jogadorAtual.posicao >= tamanho * tamanho - 1) {
+                mensagem.innerHTML += ` 🎉 ${jogadorAtual.simbolo} VENCEU!`;
+                criarTabuleiro();
+                return;
+            }
+
+            if (casasEvento.includes(jogadorAtual.posicao)) {
+                sortearPergunta();
+                return;
+            }
+
+            jogadorAtual = jogadorAtual === jogador1 ? jogador2 : jogador1;
+            criarTabuleiro();
+        }
+
+        function sortearPergunta() {
+            perguntaAtual = perguntas[Math.floor(Math.random() * perguntas.length)];
+            questaoTexto.innerHTML = perguntaAtual.texto;
+            perguntaBox.style.display = "block";
+        }
+
+        function responder(resposta) {
+            if (resposta === perguntaAtual.resposta) {
+                mensagem.innerHTML += " ✅ Resposta certa! Você pode avançar.";
+            } else {
+                mensagem.innerHTML += " ❌ Resposta errada! Volte 2 casas.";
+                somErro.play();
+                jogadorAtual.posicao = Math.max(0, jogadorAtual.posicao - 2);
+            }
+
+            perguntaBox.style.display = "none";
+            jogadorAtual = jogadorAtual === jogador1 ? jogador2 : jogador1;
+            criarTabuleiro();
+        }
+
+        criarTabuleiro();
+    </script>
+
+</body>
+</html>
